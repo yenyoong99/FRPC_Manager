@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./frp_configs:/app/frp_configs
+      - ./frpc:/app/frpc
+    environment:
+      - DATABASE_URL=sqlite:///./frp.db
+      - SECRET_KEY=your-secret-key-here
+      - FRP_BINARY_PATH=/app/frpc/frpc
+    restart: unless-stopped
+    networks:
+      - frp-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    restart: unless-stopped
+    networks:
+      - frp-network
+
+networks:
+  frp-network:
+    driver: bridge
+
+volumes:
+  frp_configs:
